@@ -1,0 +1,15 @@
+[project]
+name = "layer-surgeon"
+version = "0.1.0"
+description = "Auditable G-code recovery and diff tool for failed 3D prints"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [{name = "Layer Surgeon contributors"}]
+dependencies = []
+
+[project.scripts]
+layer-surgeon = "layer_surgeon.cli:main"
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
