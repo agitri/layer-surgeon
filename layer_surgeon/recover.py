@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+import difflib
 from dataclasses import dataclass
 from pathlib import Path
-import difflib
 
 from .gcode import analyze, find_layer_start, read_lines, write_lines
+
 
 @dataclass(frozen=True)
 class RecoveryOptions:
@@ -15,6 +16,7 @@ class RecoveryOptions:
     nozzle_temp: float | None = None
     add_comment_banner: bool = True
 
+
 @dataclass(frozen=True)
 class RecoveryResult:
     output_lines: list[str]
@@ -24,17 +26,24 @@ class RecoveryResult:
     z_height: float | None
 
 
-def build_preamble(options: RecoveryOptions, z_height: float | None, bed_temp: float | None, nozzle_temp: float | None) -> list[str]:
+def build_preamble(
+    options: RecoveryOptions,
+    z_height: float | None,
+    bed_temp: float | None,
+    nozzle_temp: float | None,
+) -> list[str]:
     lines = []
     if options.add_comment_banner:
-        lines.extend([
-            "; ------------------------------\n",
-            "; Layer Surgeon recovery file\n",
-            f"; Start layer: {options.target_layer}\n",
-            f"; Profile: {options.printer_profile}\n",
-            "; WARNING: Recovery print can collide with the existing part. Watch first moves.\n",
-            "; ------------------------------\n",
-        ])
+        lines.extend(
+            [
+                "; ------------------------------\n",
+                "; Layer Surgeon recovery file\n",
+                f"; Start layer: {options.target_layer}\n",
+                f"; Profile: {options.printer_profile}\n",
+                "; WARNING: Recovery print can collide with the existing part. Watch first moves.\n",
+                "; ------------------------------\n",
+            ]
+        )
 
     if bed_temp is not None:
         lines.append(f"M140 S{bed_temp:g} ; set bed temperature\n")
@@ -51,11 +60,13 @@ def build_preamble(options: RecoveryOptions, z_height: float | None, bed_temp: f
     if nozzle_temp is not None:
         lines.append(f"M109 S{nozzle_temp:g} ; wait for nozzle temperature\n")
 
-    lines.extend([
-        "G90 ; absolute positioning\n",
-        "M83 ; relative extrusion\n",
-        "G92 E0 ; reset extruder\n",
-    ])
+    lines.extend(
+        [
+            "G90 ; absolute positioning\n",
+            "M83 ; relative extrusion\n",
+            "G92 E0 ; reset extruder\n",
+        ]
+    )
     if z_height is not None:
         safe_z = z_height + 1.0
         lines.append(f"G1 Z{safe_z:.3f} F600 ; move just above recovery layer\n")
@@ -74,20 +85,30 @@ def recover_lines(original_lines: list[str], options: RecoveryOptions) -> Recove
     preamble = build_preamble(options, z_height, bed_temp, nozzle_temp)
     output_lines = preamble + original_lines[marker.line_index:]
 
-    diff_lines = list(difflib.unified_diff(
-        original_lines,
-        output_lines,
-        fromfile="original.gcode",
-        tofile=f"recovery_layer_{options.target_layer}.gcode",
-        lineterm="",
-    ))
+    diff_lines = list(
+        difflib.unified_diff(
+            original_lines,
+            output_lines,
+            fromfile="original.gcode",
+            tofile=f"recovery_layer_{options.target_layer}.gcode",
+            lineterm="",
+        )
+    )
     diff_lines = [line if line.endswith("\n") else line + "\n" for line in diff_lines]
 
     report = build_report(options, marker.line_index, len(original_lines), len(output_lines), z_height, bed_temp, nozzle_temp)
     return RecoveryResult(output_lines, diff_lines, report, marker.line_index, z_height)
 
 
-def build_report(options: RecoveryOptions, start_line: int, original_count: int, output_count: int, z_height: float | None, bed_temp: float | None, nozzle_temp: float | None) -> str:
+def build_report(
+    options: RecoveryOptions,
+    start_line: int,
+    original_count: int,
+    output_count: int,
+    z_height: float | None,
+    bed_temp: float | None,
+    nozzle_temp: float | None,
+) -> str:
     risk = "YES - G28 homing is included" if options.risk_allow_homing else "NO - homing omitted"
     return f"""# Layer Surgeon recovery report
 
@@ -114,7 +135,13 @@ def build_report(options: RecoveryOptions, start_line: int, original_count: int,
 """
 
 
-def recover_file(input_path: Path, output_path: Path, diff_path: Path, report_path: Path, options: RecoveryOptions) -> RecoveryResult:
+def recover_file(
+    input_path: Path,
+    output_path: Path,
+    diff_path: Path,
+    report_path: Path,
+    options: RecoveryOptions,
+) -> RecoveryResult:
     original = read_lines(input_path)
     result = recover_lines(original, options)
     write_lines(output_path, result.output_lines)

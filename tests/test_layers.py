@@ -1,4 +1,4 @@
-from layer_surgeon.gcode import analyze, find_layer_start
+from layer_surgeon.gcode import analyze
 from layer_surgeon.recover import RecoveryOptions, recover_lines
 
 

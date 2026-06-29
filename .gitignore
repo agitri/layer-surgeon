@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.DS_Store
+.pytest_cache/
+.venv/
+build/
+dist/
+.coverage
+htmlcov/
+
+# Generated recovery artifacts
+recovery*.gcode
+recovery*.diff
+recovery*_report.md

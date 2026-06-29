@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-import re
 from pathlib import Path
+import re
 
 LAYER_PATTERNS = [
     re.compile(r"^;\s*layer\s+num/total_layer_count:\s*(\d+)\s*/\s*(\d+)", re.I),
@@ -13,6 +13,7 @@ Z_MOVE_RE = re.compile(r"\bZ(-?\d+(?:\.\d+)?)\b", re.I)
 BED_TEMP_RE = re.compile(r"^M(?:140|190)\s+S(\d+(?:\.\d+)?)", re.I)
 NOZZLE_TEMP_RE = re.compile(r"^M(?:104|109)\s+S(\d+(?:\.\d+)?)", re.I)
 
+
 @dataclass(frozen=True)
 class LayerMarker:
     layer: int
@@ -20,6 +21,7 @@ class LayerMarker:
     line_index: int
     text: str
     z_height: float | None = None
+
 
 @dataclass(frozen=True)
 class GCodeAnalysis:
@@ -76,15 +78,17 @@ def analyze(lines: list[str]) -> GCodeAnalysis:
             if mz:
                 first_z_by_layer[current_layer] = float(mz.group(1))
 
-    enriched = []
+    enriched: list[LayerMarker] = []
     for marker in layers:
-        enriched.append(LayerMarker(
-            layer=marker.layer,
-            total=marker.total,
-            line_index=marker.line_index,
-            text=marker.text,
-            z_height=first_z_by_layer.get(marker.layer),
-        ))
+        enriched.append(
+            LayerMarker(
+                layer=marker.layer,
+                total=marker.total,
+                line_index=marker.line_index,
+                text=marker.text,
+                z_height=first_z_by_layer.get(marker.layer),
+            )
+        )
     return GCodeAnalysis(enriched, bed_temp, nozzle_temp, first_z_by_layer)
 
 

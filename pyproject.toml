@@ -8,6 +8,9 @@ license = {text = "MIT"}
 authors = [{name = "Layer Surgeon contributors"}]
 dependencies = []
 
+[project.optional-dependencies]
+dev = ["pytest>=8,<9"]
+
 [project.scripts]
 layer-surgeon = "layer_surgeon.cli:main"
 
