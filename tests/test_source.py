@@ -3,10 +3,18 @@ from zipfile import ZIP_BZIP2, ZIP_DEFLATED, ZipFile
 
 import pytest
 
+from layer_surgeon.adapters.sources import PlainGCodeReader, ThreeMFReader
+from layer_surgeon.application import RecoverPrintCommand
 from layer_surgeon.cli import main
-from layer_surgeon.recover import RecoveryOptions, recover_file
-from layer_surgeon.source import discover_3mf_gcode, read_gcode_source
-
+from layer_surgeon.composition import create_recover_print
+from layer_surgeon.domain.errors import (
+    ArtifactPathError,
+    SourceError,
+    SourceSelectionError,
+    UnsafeArchiveError,
+)
+from layer_surgeon.domain.models import RecoverySettings
+from layer_surgeon.ports import ArtifactTargets
 
 GCODE_TEMPLATE = """M140 S60
 M104 S220
@@ -24,6 +32,21 @@ def write_3mf(path: Path, members: dict[str, str]) -> None:
             archive.writestr(member_path, content)
 
 
+def recovery_command(
+    input_path: Path,
+    output_path: Path,
+    diff_path: Path,
+    report_path: Path,
+    plate: int | None = None,
+) -> RecoverPrintCommand:
+    return RecoverPrintCommand(
+        input_path=input_path,
+        plate=plate,
+        targets=ArtifactTargets(output_path, diff_path, report_path),
+        settings=RecoverySettings(target_layer=112),
+    )
+
+
 def test_discovers_bambu_plate_gcode(tmp_path: Path):
     archive_path = tmp_path / "print.gcode.3mf"
     write_3mf(
@@ -31,7 +54,7 @@ def test_discovers_bambu_plate_gcode(tmp_path: Path):
         {"Metadata/plate_1.gcode": GCODE_TEMPLATE.format(layer=112, z_height=22.4)},
     )
 
-    candidates = discover_3mf_gcode(archive_path)
+    candidates = ThreeMFReader().discover(archive_path)
 
     assert len(candidates) == 1
     assert candidates[0].member_path == "Metadata/plate_1.gcode"
@@ -45,10 +68,10 @@ def test_reads_single_embedded_gcode(tmp_path: Path):
         {"Metadata/plate_1.gcode": GCODE_TEMPLATE.format(layer=112, z_height=22.4)},
     )
 
-    source = read_gcode_source(archive_path)
+    source = ThreeMFReader().read(archive_path)
 
-    assert source.archive_member == "Metadata/plate_1.gcode"
-    assert source.plate == 1
+    assert source.provenance.member_path == "Metadata/plate_1.gcode"
+    assert source.provenance.plate == 1
     assert "; layer num/total_layer_count: 112/120\n" in source.lines
 
 
@@ -62,11 +85,11 @@ def test_requires_plate_for_multiple_gcode_members(tmp_path: Path):
         },
     )
 
-    with pytest.raises(ValueError, match="Multiple embedded G-code files"):
-        read_gcode_source(archive_path)
+    with pytest.raises(SourceSelectionError, match="Multiple embedded G-code files"):
+        ThreeMFReader().read(archive_path)
 
-    source = read_gcode_source(archive_path, plate=2)
-    assert source.plate == 2
+    source = ThreeMFReader().read(archive_path, plate=2)
+    assert source.provenance.plate == 2
     assert "; layer num/total_layer_count: 20/120\n" in source.lines
 
 
@@ -74,16 +97,16 @@ def test_rejects_unsliced_3mf_without_gcode(tmp_path: Path):
     archive_path = tmp_path / "project.3mf"
     write_3mf(archive_path, {"Metadata/project_settings.config": "settings"})
 
-    with pytest.raises(ValueError, match="No embedded .gcode"):
-        read_gcode_source(archive_path)
+    with pytest.raises(SourceSelectionError, match="No embedded .gcode"):
+        ThreeMFReader().read(archive_path)
 
 
 def test_rejects_invalid_3mf_archive(tmp_path: Path):
     archive_path = tmp_path / "broken.3mf"
     archive_path.write_text("not a zip archive")
 
-    with pytest.raises(ValueError, match="not a valid ZIP-based 3MF package"):
-        read_gcode_source(archive_path)
+    with pytest.raises(SourceError, match="not a valid ZIP-based 3MF package"):
+        ThreeMFReader().read(archive_path)
 
 
 def test_rejects_zip_without_3mf_package_structure(tmp_path: Path):
@@ -94,8 +117,8 @@ def test_rejects_zip_without_3mf_package_structure(tmp_path: Path):
             GCODE_TEMPLATE.format(layer=112, z_height=22.4),
         )
 
-    with pytest.raises(ValueError, match=r"\[Content_Types\]\.xml is missing"):
-        read_gcode_source(archive_path)
+    with pytest.raises(UnsafeArchiveError, match=r"\[Content_Types\]\.xml is missing"):
+        ThreeMFReader().read(archive_path)
 
 
 def test_rejects_unsafe_archive_member_path(tmp_path: Path):
@@ -105,8 +128,8 @@ def test_rejects_unsafe_archive_member_path(tmp_path: Path):
         {"../plate_1.gcode": GCODE_TEMPLATE.format(layer=112, z_height=22.4)},
     )
 
-    with pytest.raises(ValueError, match="unsafe member path"):
-        read_gcode_source(archive_path)
+    with pytest.raises(UnsafeArchiveError, match="unsafe member path"):
+        ThreeMFReader().read(archive_path)
 
 
 def test_rejects_nonstandard_3mf_compression(tmp_path: Path):
@@ -120,8 +143,8 @@ def test_rejects_nonstandard_3mf_compression(tmp_path: Path):
             compress_type=ZIP_BZIP2,
         )
 
-    with pytest.raises(ValueError, match="Unsupported 3MF compression"):
-        read_gcode_source(archive_path)
+    with pytest.raises(UnsafeArchiveError, match="Unsupported 3MF compression"):
+        ThreeMFReader().read(archive_path)
 
 
 def test_rejects_suspicious_gcode_compression_ratio(tmp_path: Path):
@@ -129,11 +152,11 @@ def test_rejects_suspicious_gcode_compression_ratio(tmp_path: Path):
     repetitive_gcode = "G1 X0 Y0 E0\n" * 100_000
     write_3mf(archive_path, {"Metadata/plate_1.gcode": repetitive_gcode})
 
-    with pytest.raises(ValueError, match="compression ratio exceeds"):
-        read_gcode_source(archive_path)
+    with pytest.raises(UnsafeArchiveError, match="compression ratio exceeds"):
+        ThreeMFReader().read(archive_path)
 
 
-def test_recover_file_uses_selected_3mf_plate(tmp_path: Path):
+def test_recover_use_case_uses_selected_3mf_plate(tmp_path: Path):
     archive_path = tmp_path / "multi.3mf"
     output_path = tmp_path / "recovery.gcode"
     diff_path = tmp_path / "recovery.diff"
@@ -146,18 +169,18 @@ def test_recover_file_uses_selected_3mf_plate(tmp_path: Path):
         },
     )
 
-    result = recover_file(
-        archive_path,
-        output_path,
-        diff_path,
-        report_path,
-        RecoveryOptions(target_layer=112),
-        plate=2,
+    execution = create_recover_print().execute(
+        recovery_command(
+            archive_path,
+            output_path,
+            diff_path,
+            report_path,
+            plate=2,
+        )
     )
 
-    assert result.source is not None
-    assert result.source.archive_member == "Metadata/plate_2.gcode"
-    assert result.source.plate == 2
+    assert execution.plan.source.provenance.member_path == "Metadata/plate_2.gcode"
+    assert execution.plan.source.provenance.plate == 2
     assert "G1 Z22.400 F300" in output_path.read_text()
     assert "--- multi.3mf:Metadata/plate_2.gcode" in diff_path.read_text()
     assert "- 3MF G-code member: Metadata/plate_2.gcode" in report_path.read_text()
@@ -168,13 +191,14 @@ def test_rejects_input_output_path_collision(tmp_path: Path):
     input_path = tmp_path / "original.gcode"
     input_path.write_text(GCODE_TEMPLATE.format(layer=112, z_height=22.4))
 
-    with pytest.raises(ValueError, match="original files are immutable"):
-        recover_file(
-            input_path,
-            input_path,
-            tmp_path / "recovery.diff",
-            tmp_path / "recovery_report.md",
-            RecoveryOptions(target_layer=112),
+    with pytest.raises(ArtifactPathError, match="original files are immutable"):
+        create_recover_print().execute(
+            recovery_command(
+                input_path,
+                input_path,
+                tmp_path / "recovery.diff",
+                tmp_path / "recovery_report.md",
+            )
         )
 
 
@@ -182,8 +206,23 @@ def test_rejects_plate_for_plain_gcode(tmp_path: Path):
     input_path = tmp_path / "original.gcode"
     input_path.write_text(GCODE_TEMPLATE.format(layer=112, z_height=22.4))
 
-    with pytest.raises(ValueError, match="--plate can only be used"):
-        read_gcode_source(input_path, plate=1)
+    with pytest.raises(SourceSelectionError, match="--plate can only be used"):
+        PlainGCodeReader().read(input_path, plate=1)
+
+
+def test_rejects_unsupported_input_type(tmp_path: Path):
+    input_path = tmp_path / "model.stl"
+    input_path.write_text("solid model\nendsolid model\n")
+
+    with pytest.raises(SourceError, match="No source reader supports"):
+        create_recover_print().execute(
+            recovery_command(
+                input_path,
+                tmp_path / "recovery.gcode",
+                tmp_path / "recovery.diff",
+                tmp_path / "recovery_report.md",
+            )
+        )
 
 
 def test_rejects_non_positive_plate_number(tmp_path: Path):
@@ -193,8 +232,8 @@ def test_rejects_non_positive_plate_number(tmp_path: Path):
         {"Metadata/plate_1.gcode": GCODE_TEMPLATE.format(layer=112, z_height=22.4)},
     )
 
-    with pytest.raises(ValueError, match="greater than zero"):
-        read_gcode_source(archive_path, plate=0)
+    with pytest.raises(SourceSelectionError, match="greater than zero"):
+        ThreeMFReader().read(archive_path, plate=0)
 
 
 def test_rejects_duplicate_output_paths(tmp_path: Path):
@@ -202,13 +241,14 @@ def test_rejects_duplicate_output_paths(tmp_path: Path):
     shared_output_path = tmp_path / "recovery.out"
     input_path.write_text(GCODE_TEMPLATE.format(layer=112, z_height=22.4))
 
-    with pytest.raises(ValueError, match="paths must be different"):
-        recover_file(
-            input_path,
-            shared_output_path,
-            shared_output_path,
-            tmp_path / "recovery_report.md",
-            RecoveryOptions(target_layer=112),
+    with pytest.raises(ArtifactPathError, match="paths must be different"):
+        create_recover_print().execute(
+            recovery_command(
+                input_path,
+                shared_output_path,
+                shared_output_path,
+                tmp_path / "recovery_report.md",
+            )
         )
 
 

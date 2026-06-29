@@ -8,6 +8,7 @@ This index separates current behavior from future direction and historical conte
 - [`../ARCHITECTURE.md`](../ARCHITECTURE.md): existing implementation and target boundaries.
 - [`../ROADMAP.md`](../ROADMAP.md): implementation status and planned phases.
 - [`masterplan.md`](masterplan.md): long-term product and ecosystem strategy.
+- [`decisions/0001-pragmatic-hexagonal-architecture.md`](decisions/0001-pragmatic-hexagonal-architecture.md): accepted architecture decision and tradeoffs.
 
 ## Domain reference
 

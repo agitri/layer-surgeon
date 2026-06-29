@@ -9,6 +9,9 @@ python -m venv .venv
 source .venv/bin/activate
 pip install -e ".[dev]"
 pytest
+ruff check layer_surgeon tests
+ruff format --check layer_surgeon tests
+mypy
 ```
 
 ## Before changing code
@@ -23,6 +26,7 @@ Read `AGENTS.md`, `PRD.md`, `ARCHITECTURE.md`, and `ROADMAP.md`. For domain beha
 - Keep behavior deterministic.
 - Update user-facing documentation and `CHANGELOG.md` for visible changes.
 - Explain any printer- or slicer-specific assumption in code and documentation.
+- Preserve the dependency direction documented in `ARCHITECTURE.md`.
 
 Do not commit proprietary or personally identifying G-code fixtures. Minimize fixtures while preserving the syntax needed for the test, and record the slicer and version when known.
 

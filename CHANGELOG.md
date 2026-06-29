@@ -17,6 +17,8 @@ All notable project changes are documented here. The project follows the structu
 
 - Expanded README usage documentation with supported input formats, complete recovery workflow, option reference, artifact review steps, and explicit 3MF limitations.
 - Enforced immutable input and distinct recovery artifact paths.
+- Refactored the MVP into a pragmatic hexagonal architecture with immutable domain models, typed errors, protocol-based ports, focused adapters, a `RecoverPrint` use case, and an explicit composition root.
+- Added Ruff and strict mypy as required development checks.
 
 ## 0.1.0
 
