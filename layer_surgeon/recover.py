@@ -4,7 +4,8 @@ import difflib
 from dataclasses import dataclass
 from pathlib import Path
 
-from .gcode import analyze, find_layer_start, read_lines, write_lines
+from .gcode import analyze, find_layer_start, write_lines
+from .source import GCodeSource, read_gcode_source
 
 
 @dataclass(frozen=True)
@@ -24,6 +25,7 @@ class RecoveryResult:
     report: str
     start_line: int
     z_height: float | None
+    source: GCodeSource | None = None
 
 
 def build_preamble(
@@ -75,7 +77,11 @@ def build_preamble(
     return lines
 
 
-def recover_lines(original_lines: list[str], options: RecoveryOptions) -> RecoveryResult:
+def recover_lines(
+    original_lines: list[str],
+    options: RecoveryOptions,
+    source: GCodeSource | None = None,
+) -> RecoveryResult:
     marker = find_layer_start(original_lines, options.target_layer)
     analysis = analyze(original_lines)
     bed_temp = options.bed_temp if options.bed_temp is not None else analysis.bed_temp
@@ -89,15 +95,24 @@ def recover_lines(original_lines: list[str], options: RecoveryOptions) -> Recove
         difflib.unified_diff(
             original_lines,
             output_lines,
-            fromfile="original.gcode",
+            fromfile=source.display_name if source is not None else "original.gcode",
             tofile=f"recovery_layer_{options.target_layer}.gcode",
             lineterm="",
         )
     )
     diff_lines = [line if line.endswith("\n") else line + "\n" for line in diff_lines]
 
-    report = build_report(options, marker.line_index, len(original_lines), len(output_lines), z_height, bed_temp, nozzle_temp)
-    return RecoveryResult(output_lines, diff_lines, report, marker.line_index, z_height)
+    report = build_report(
+        options,
+        marker.line_index,
+        len(original_lines),
+        len(output_lines),
+        z_height,
+        bed_temp,
+        nozzle_temp,
+        source,
+    )
+    return RecoveryResult(output_lines, diff_lines, report, marker.line_index, z_height, source)
 
 
 def build_report(
@@ -108,12 +123,26 @@ def build_report(
     z_height: float | None,
     bed_temp: float | None,
     nozzle_temp: float | None,
+    source: GCodeSource | None = None,
 ) -> str:
     risk = "YES - G28 homing is included" if options.risk_allow_homing else "NO - homing omitted"
+    source_name = source.input_path.name if source is not None else "original.gcode"
+    source_member = source.archive_member if source is not None else None
+    source_plate = source.plate if source is not None else None
+    input_details = [f"- Source file: {source_name}"]
+    if source_member is not None:
+        input_details.extend(
+            [
+                f"- 3MF G-code member: {source_member}",
+                f"- 3MF plate: {source_plate if source_plate is not None else 'unknown'}",
+            ]
+        )
+    input_details_text = "\n".join(input_details)
     return f"""# Layer Surgeon recovery report
 
 ## Input
 
+{input_details_text}
 - Target layer: {options.target_layer}
 - Printer profile: {options.printer_profile}
 - Original lines removed before recovery: {start_line}
@@ -141,10 +170,22 @@ def recover_file(
     diff_path: Path,
     report_path: Path,
     options: RecoveryOptions,
+    plate: int | None = None,
 ) -> RecoveryResult:
-    original = read_lines(input_path)
-    result = recover_lines(original, options)
+    _validate_distinct_paths(input_path, output_path, diff_path, report_path)
+    source = read_gcode_source(input_path, plate)
+    result = recover_lines(source.lines, options, source)
     write_lines(output_path, result.output_lines)
     write_lines(diff_path, result.diff_lines)
-    report_path.write_text(result.report)
+    report_path.write_text(result.report, encoding="utf-8")
     return result
+
+
+def _validate_distinct_paths(input_path: Path, *output_paths: Path) -> None:
+    resolved_input = input_path.resolve()
+    resolved_outputs = [path.resolve() for path in output_paths]
+
+    if resolved_input in resolved_outputs:
+        raise ValueError("Input and output paths must be different; original files are immutable")
+    if len(set(resolved_outputs)) != len(resolved_outputs):
+        raise ValueError("Recovery G-code, diff, and report paths must be different")

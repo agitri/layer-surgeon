@@ -8,6 +8,9 @@ Layer Surgeon is a Python 3.10+ command-line application with no runtime depende
 CLI arguments
     |
     v
+Plain G-code / 3MF source reader
+    |
+    v
 G-code parsing and analysis
     |
     v
@@ -21,6 +24,7 @@ Recovery policy and preamble generation
 ## Current modules
 
 - `layer_surgeon/cli.py`: command-line parsing and completion output.
+- `layer_surgeon/source.py`: plain-text reading, safe 3MF validation, embedded G-code discovery, and plate selection.
 - `layer_surgeon/gcode.py`: text I/O, layer recognition, and basic state extraction.
 - `layer_surgeon/recover.py`: recovery options, preamble generation, source preservation, diff generation, and reporting.
 - `tests/`: behavioral and parser tests.
@@ -30,13 +34,15 @@ The package is intentionally small. Splitting it into directories before respons
 
 ## Recovery data flow
 
-1. Read input text while preserving line endings.
-2. Analyze layer markers, temperatures, and per-layer Z heights.
-3. Find the exact requested layer or fail.
-4. Resolve explicit temperature options before detected values.
-5. Build an annotated recovery preamble.
-6. Append the untouched source suffix beginning at the layer marker.
-7. Render recovery G-code, unified diff, and report.
+1. Identify plain G-code or a ZIP-based 3MF package.
+2. For 3MF, validate the package and discover/select an embedded G-code member without extracting it to disk.
+3. Read source text while preserving line endings and archive provenance.
+4. Analyze layer markers, temperatures, and per-layer Z heights.
+5. Find the exact requested layer or fail.
+6. Resolve explicit temperature options before detected values.
+7. Build an annotated recovery preamble.
+8. Append the untouched source suffix beginning at the layer marker.
+9. Render recovery G-code, unified diff, and report.
 
 ## Target boundaries
 

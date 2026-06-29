@@ -43,12 +43,14 @@ Given an original G-code file and a target layer, Layer Surgeon must:
 ## Current supported scope
 
 - Plain G-code input.
+- Sliced ZIP-based 3MF input with embedded G-code discovery.
+- Explicit plate selection for multi-plate archives using `plate_<number>.gcode` member names.
 - Recovery by layer number.
 - Common Bambu/Orca/Prusa and Cura-style layer comments.
 - Basic lexical extraction of nozzle temperature, bed temperature, and layer Z height.
 - Optional, explicitly risky homing.
 
-The profile option is currently a report label, not a printer-specific safety policy. Recovery by Z height, complete Bambu/Orca support, 3MF extraction, collision analysis, and state reconstruction remain roadmap work.
+The profile option is currently a report label, not a printer-specific safety policy. Recovery by Z height, complete Bambu/Orca semantics, 3MF metadata interpretation, collision analysis, and state reconstruction remain roadmap work.
 
 ## Planned monitoring and incident reconstruction
 
@@ -63,6 +65,22 @@ Layer Surgeon should provide an opt-in printer flight recorder that:
 - recommends a recovery boundary without automatically controlling the printer.
 
 The system must distinguish reported facts from inferred locations. Printer telemetry often cannot identify the exact command being physically executed, and mechanical failures may not produce firmware errors. Command-level claims require stronger evidence, such as a host-reported file position or an instrumented G-code stream.
+
+## Long-term fleet recovery
+
+Layer Surgeon should scale from one printer to print-farm operation with hundreds of concurrent machines. A fleet service should:
+
+- maintain independent, reconnectable monitoring sessions per printer;
+- retain an append-only incident history linked to printer, job, source digest, and generated artifacts;
+- identify a failed job and reconstruct the best-supported recovery boundary;
+- generate and validate recovery G-code deterministically;
+- apply printer-specific policy before any automated action;
+- queue a recovery job only when evidence and configured confidence thresholds allow it;
+- prevent duplicate commands and repeated recovery loops through idempotency keys and attempt limits;
+- expose fleet-wide health, incidents, pending approvals, and recovery outcomes;
+- retain an operator kill switch and complete audit trail.
+
+Fully automatic restart is a controlled execution mode, not the default. It requires reliable printer control adapters, physical-state evidence, collision and state validation, explicit operator policy, and bounded retry behavior. AI may classify an incident or recommend a boundary, but deterministic code must generate and validate the recovery artifact.
 
 ## Quality attributes
 

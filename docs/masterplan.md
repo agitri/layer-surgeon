@@ -19,6 +19,7 @@ The mission is to build the most trusted recovery engine in the 3D-printing ecos
 ## Product pillars
 
 - **Monitor:** record printer telemetry and reconstruct incidents as an auditable timeline.
+- **Orchestrate:** coordinate policy-controlled recovery across print-farm fleets.
 - **Recover:** resume failed jobs from evidence-backed boundaries.
 - **Diff:** compare instruction streams at text, command, layer, and path levels.
 - **Explain:** translate machine instructions and diagnostics into understandable reasoning.
@@ -68,6 +69,8 @@ AI may estimate a failure layer, classify a failure, explain diagnostics, or rec
 ## Ecosystem
 
 The core remains permissively licensed and open-source. Extension points should support printer profiles, dialect adapters, analyzers, and transformation plugins. Hosted AI or collaboration services may be commercial without reducing the capability or auditability of the local core.
+
+At fleet scale, hosted or self-managed services may coordinate hundreds of printers. Read-only monitoring remains the baseline; automated recovery and restart are opt-in autonomy levels protected by printer-specific policy, validation, bounded retries, and complete audit history.
 
 ## Long-term outcome
 

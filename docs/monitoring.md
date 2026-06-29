@@ -62,3 +62,33 @@ A report should contain:
 - a recommended recovery boundary for operator review.
 
 Monitoring is read-only by default. Pausing, stopping, or otherwise controlling a printer is a separate capability requiring explicit authorization and safety policy.
+
+## Fleet scale
+
+The telemetry model must support hundreds of concurrent printers without combining their state. Each event belongs to a stable printer identity, job identity, source digest, adapter version, and monotonically ordered session stream.
+
+Fleet ingestion should tolerate disconnects, duplicate messages, delayed events, and printer restarts. Adapter workers can scale horizontally, while incident correlation and artifact generation remain deterministic. Backpressure must degrade sampling frequency rather than discard state transitions or reported errors.
+
+## Gated automatic recovery
+
+The long-term workflow is:
+
+```text
+monitor -> detect incident -> preserve evidence -> correlate source
+        -> generate recovery -> validate policy and machine state
+        -> approve or automatically dispatch -> verify outcome
+```
+
+Automatic dispatch is allowed only when the configured autonomy policy, evidence quality, and printer-specific checks all pass. Required controls include:
+
+- separate read and control credentials;
+- explicit per-printer autonomy settings;
+- source and artifact digests;
+- collision and machine-state validation;
+- idempotent dispatch keys;
+- maximum recovery attempts and automatic lockout;
+- operator-visible countdown or approval where policy requires it;
+- an immediate fleet-wide kill switch;
+- immutable recording of decisions, commands, and outcomes.
+
+A camera or AI classifier can increase or decrease confidence but cannot directly create or dispatch modified G-code. The deterministic recovery engine owns transformation and validation.

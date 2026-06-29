@@ -4,7 +4,9 @@ Recovery means producing a new instruction stream that resumes an interrupted pr
 
 ## Current workflow
 
-The `recover` command selects an exact layer marker, detects the first Z move associated with that layer and the first configured bed/nozzle temperatures, builds a preamble, then appends the original file from the marker onward.
+The `recover` command reads plain G-code or discovers G-code embedded in a sliced 3MF package. It selects an exact layer marker, detects the first Z move associated with that layer and the first configured bed/nozzle temperatures, builds a preamble, then appends the original G-code from the marker onward.
+
+For a 3MF with one G-code member, selection is automatic. Multi-plate archives require `--plate`; Layer Surgeon refuses ambiguous selection. Container and member provenance are included in the diff and report.
 
 Explicit temperature options override detected temperatures. Homing is excluded unless `--risk-allow-homing` is supplied.
 

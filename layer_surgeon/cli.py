@@ -11,7 +11,8 @@ def main(argv: list[str] | None = None) -> int:
     sub = parser.add_subparsers(dest="command", required=True)
 
     recover = sub.add_parser("recover", help="Create auditable recovery G-code from a chosen layer")
-    recover.add_argument("--input", required=True, type=Path, help="Original G-code file")
+    recover.add_argument("--input", required=True, type=Path, help="Original .gcode or sliced .3mf file")
+    recover.add_argument("--plate", type=int, default=None, help="Plate number when a 3MF contains multiple G-code files")
     recover.add_argument("--layer", required=True, type=int, help="Layer to start from")
     recover.add_argument("--output", required=True, type=Path, help="Recovery G-code output")
     recover.add_argument("--diff", required=True, type=Path, help="Unified diff output")
@@ -31,11 +32,18 @@ def main(argv: list[str] | None = None) -> int:
             bed_temp=args.bed_temp,
             nozzle_temp=args.nozzle_temp,
         )
-        result = recover_file(args.input, args.output, args.diff, args.report, options)
+        try:
+            result = recover_file(args.input, args.output, args.diff, args.report, options, args.plate)
+        except (OSError, ValueError) as exc:
+            recover.error(str(exc))
         print(f"Recovery created: {args.output}")
         print(f"Diff created:     {args.diff}")
         print(f"Report created:   {args.report}")
         print(f"Started at source line: {result.start_line}")
+        if result.source is not None and result.source.archive_member is not None:
+            print(f"3MF G-code member: {result.source.archive_member}")
+            if result.source.plate is not None:
+                print(f"3MF plate:        {result.source.plate}")
         if result.z_height is not None:
             print(f"Detected Z height: {result.z_height}")
         return 0

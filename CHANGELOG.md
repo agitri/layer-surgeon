@@ -9,10 +9,14 @@ All notable project changes are documented here. The project follows the structu
 - Project charter, product requirements, architecture, roadmap, contribution guide, and domain documentation.
 - Historical record of the original product vision.
 - Planned printer flight recorder, telemetry adapters, source correlation, and incident reporting feature.
+- Safe embedded G-code discovery for sliced 3MF archives, including explicit multi-plate selection.
+- Archive provenance in recovery diffs, reports, and CLI output.
+- Long-term print-farm monitoring and policy-gated automatic recovery requirements.
 
 ### Changed
 
 - Expanded README usage documentation with supported input formats, complete recovery workflow, option reference, artifact review steps, and explicit 3MF limitations.
+- Enforced immutable input and distinct recovery artifact paths.
 
 ## 0.1.0
 

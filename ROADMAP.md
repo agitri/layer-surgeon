@@ -8,14 +8,15 @@ Roadmap items describe intent, not a compatibility promise. Correctness and evid
 - [x] Generate recovery G-code, unified diff, and Markdown report.
 - [x] Recognize basic Bambu/Orca/Prusa and Cura layer comments.
 - [x] Require explicit opt-in for risky homing.
-- [ ] Reject input/output path collisions.
+- [x] Reject input/output path collisions.
 - [ ] Add golden artifact and failure-path tests.
 - [ ] Define a stable diagnostic and risk taxonomy.
 
 ## 0.2 — Reliable recovery
 
 - [ ] Recover by Z height.
-- [ ] Extract plate G-code from 3MF files.
+- [x] Discover and read embedded plate G-code from sliced 3MF files.
+- [ ] Interpret slicer-specific 3MF relationships and plate metadata beyond filename conventions.
 - [ ] Add explicit Bambu, Orca, Prusa, and Cura dialect adapters.
 - [ ] Reconstruct coordinate, extrusion, fan, temperature, offset, and tool state.
 - [ ] Generate a recovery manifest with input digest and tool version.
@@ -49,6 +50,17 @@ Roadmap items describe intent, not a compatibility promise. Correctness and evid
 - [ ] Verified transformation passes.
 - [ ] Plugin SDK for dialects, analyzers, printer profiles, and transformations.
 - [ ] GUI and editor integrations backed by the same core engine.
+
+## Post-1.0 — Fleet recovery automation
+
+- [ ] Monitor hundreds of printers through horizontally scalable adapter workers.
+- [ ] Persist append-only job and incident timelines with source and artifact digests.
+- [ ] Add fleet health, incident, approval, and recovery dashboards.
+- [ ] Add a policy engine for per-printer and per-farm autonomy levels.
+- [ ] Validate physical and machine state before generating or dispatching recovery jobs.
+- [ ] Add idempotent job dispatch, bounded retries, lockout after repeated failure, and an operator kill switch.
+- [ ] Support automatic recovery generation and restart only for policy-approved, high-confidence incidents.
+- [ ] Preserve every decision, generated artifact, command, and outcome in an audit trail.
 
 ## Later exploration
 
