@@ -10,6 +10,10 @@ All notable project changes are documented here. The project follows the structu
 - Historical record of the original product vision.
 - Planned printer flight recorder, telemetry adapters, source correlation, and incident reporting feature.
 
+### Changed
+
+- Expanded README usage documentation with supported input formats, complete recovery workflow, option reference, artifact review steps, and explicit 3MF limitations.
+
 ## 0.1.0
 
 ### Added
