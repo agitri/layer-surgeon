@@ -2,22 +2,21 @@
 
 ## Product statement
 
-Layer Surgeon is an open-source, auditable toolchain for inspecting and transforming G-code. Its first product is deterministic recovery of failed 3D prints from a selected layer.
+Layer Surgeon is an open-source, auditable engine for determining whether a failed 3D print can be recovered and producing deterministic recovery G-code from an evidence-backed boundary.
 
 ## Problem
 
 Long prints can fail near completion. Reprinting wastes time, material, and energy, while manually editing G-code is opaque and can cause collisions, thermal mistakes, or incorrect extrusion state.
 
-## Vision
+## Goal
 
-Become the Git of G-code: a transparent, reproducible foundation for monitoring, recovery, diagnosis, comparison, patching, explanation, visualization, and optimization.
+Given the original sliced job and a defensible recovery boundary, produce a recovery artifact that is deterministic, reviewable, and explicit about every unresolved risk.
 
 ## Users
 
 - Printer operators recovering valuable failed prints.
-- Advanced users investigating slicer output or printer behavior.
-- Tool authors building G-code analysis and transformation workflows.
-- Contributors adding slicer and printer support.
+- Advanced users validating a recovery before running it.
+- Contributors adding recovery support for slicers and printers.
 
 ## Current product: layer recovery
 
@@ -52,36 +51,6 @@ Given an original G-code file and a target layer, Layer Surgeon must:
 
 The profile option is currently a report label, not a printer-specific safety policy. Recovery by Z height, complete Bambu/Orca semantics, 3MF metadata interpretation, collision analysis, and state reconstruction remain roadmap work.
 
-## Planned monitoring and incident reconstruction
-
-Layer Surgeon should provide an opt-in printer flight recorder that:
-
-- collects timestamped job, progress, layer, Z-height, temperature, fan, speed, tool, printer-state, and error telemetry when exposed by the printer;
-- supports vendor-neutral adapters, initially targeting Bambu MQTT, PrusaLink, OctoPrint, and Moonraker;
-- associates each monitoring session with a source-file digest and printer identity;
-- correlates telemetry with source G-code layers and line ranges;
-- records state transitions and optional camera snapshots;
-- produces an incident report containing the last healthy state, first abnormal state, reported error, likely failure layer or line range, and confidence level;
-- recommends a recovery boundary without automatically controlling the printer.
-
-The system must distinguish reported facts from inferred locations. Printer telemetry often cannot identify the exact command being physically executed, and mechanical failures may not produce firmware errors. Command-level claims require stronger evidence, such as a host-reported file position or an instrumented G-code stream.
-
-## Long-term fleet recovery
-
-Layer Surgeon should scale from one printer to print-farm operation with hundreds of concurrent machines. A fleet service should:
-
-- maintain independent, reconnectable monitoring sessions per printer;
-- retain an append-only incident history linked to printer, job, source digest, and generated artifacts;
-- identify a failed job and reconstruct the best-supported recovery boundary;
-- generate and validate recovery G-code deterministically;
-- apply printer-specific policy before any automated action;
-- queue a recovery job only when evidence and configured confidence thresholds allow it;
-- prevent duplicate commands and repeated recovery loops through idempotency keys and attempt limits;
-- expose fleet-wide health, incidents, pending approvals, and recovery outcomes;
-- retain an operator kill switch and complete audit trail.
-
-Fully automatic restart is a controlled execution mode, not the default. It requires reliable printer control adapters, physical-state evidence, collision and state validation, explicit operator policy, and bounded retry behavior. AI may classify an incident or recommend a boundary, but deterministic code must generate and validate the recovery artifact.
-
 ## Quality attributes
 
 - **Transparent:** every changed line is diffable.
@@ -93,7 +62,10 @@ Fully automatic restart is a controlled execution mode, not the default. It requ
 ## Non-goals for the current product
 
 - Automatically controlling a printer.
+- Monitoring printers or detecting failures.
+- Managing print farms, queues, cameras, or fleets.
 - Guaranteeing collision-free motion.
 - Repairing physically displaced prints.
 - Re-slicing models.
+- General-purpose G-code optimization, visualization, or editing.
 - Silently normalizing arbitrary G-code dialects.

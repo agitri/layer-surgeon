@@ -9,7 +9,7 @@ Roadmap items describe intent, not a compatibility promise. Correctness and evid
 - [x] Recognize basic Bambu/Orca/Prusa and Cura layer comments.
 - [x] Require explicit opt-in for risky homing.
 - [x] Reject input/output path collisions.
-- [ ] Add golden artifact and failure-path tests.
+- [x] Add golden artifact and failure-path tests.
 - [ ] Define a stable diagnostic and risk taxonomy.
 
 ## 0.2 — Reliable recovery
@@ -23,50 +23,22 @@ Roadmap items describe intent, not a compatibility promise. Correctness and evid
 - [ ] Build a fixture corpus from documented slicer versions.
 - [ ] Add collision and clearance risk reporting.
 
-## 0.3 — Monitoring and incident reconstruction
+## 0.3 — Recovery eligibility
 
-- [ ] Add a vendor-neutral telemetry event model and append-only flight-recorder format.
-- [ ] Add read-only adapters for Bambu MQTT and PrusaLink.
-- [ ] Add OctoPrint and Moonraker adapters with source-position correlation where available.
-- [ ] Associate monitored jobs with source-file digests and printer identities.
-- [ ] Record job state, progress, layer/Z position, temperatures, fans, speed, tool state, and reported errors.
-- [ ] Support timestamped camera snapshots without making computer vision a recovery prerequisite.
-- [ ] Correlate telemetry with likely G-code layers and source ranges, including an explicit confidence level.
-- [ ] Generate an incident report with the last healthy state, first abnormal state, and recommended recovery boundary.
-- [ ] Keep monitoring read-only by default; printer control requires a separate explicit capability and safety policy.
+- [ ] Define deterministic recoverable, risky, and refused outcomes.
+- [ ] Refuse recovery when required coordinate, extrusion, tool, or position evidence is missing.
+- [ ] Accept an explicit observed failure boundary without embedding printer monitoring.
+- [ ] Validate approach motion against known printer geometry and retained toolpaths.
+- [ ] Produce machine-readable diagnostics alongside the human report.
 
-## 0.4 — Inspection and patching
-
-- [ ] `diff` command.
-- [ ] `doctor` and `validate` commands.
-- [ ] `explain` command.
-- [ ] Visual layer and toolpath comparison.
-- [ ] Machine-readable patch format and `patch` command.
-
-## 1.0 — Stable toolchain
+## 1.0 — Stable recovery engine
 
 - [ ] Stable library and command-line APIs.
 - [ ] Lossless intermediate representation with source maps.
-- [ ] Verified transformation passes.
-- [ ] Plugin SDK for dialects, analyzers, printer profiles, and transformations.
-- [ ] GUI and editor integrations backed by the same core engine.
-
-## Post-1.0 — Fleet recovery automation
-
-- [ ] Monitor hundreds of printers through horizontally scalable adapter workers.
-- [ ] Persist append-only job and incident timelines with source and artifact digests.
-- [ ] Add fleet health, incident, approval, and recovery dashboards.
-- [ ] Add a policy engine for per-printer and per-farm autonomy levels.
-- [ ] Validate physical and machine state before generating or dispatching recovery jobs.
-- [ ] Add idempotent job dispatch, bounded retries, lockout after repeated failure, and an operator kill switch.
-- [ ] Support automatic recovery generation and restart only for policy-approved, high-confidence incidents.
-- [ ] Preserve every decision, generated artifact, command, and outcome in an audit trail.
-
-## Later exploration
-
-- AI-assisted failure classification and recovery recommendations. Deterministic code remains responsible for all G-code transformations.
-- Hosted collaboration services.
-- Slicer and printer-management integrations beyond the monitoring adapters.
+- [ ] Verified recovery transformations.
+- [ ] Versioned slicer dialect and printer recovery policies.
+- [ ] Compatibility fixtures for supported slicer, firmware, and printer combinations.
+- [ ] Five documented, supervised real-print recoveries with no unsafe motion.
 
 ## Release gate
 

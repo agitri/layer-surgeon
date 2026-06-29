@@ -7,11 +7,8 @@ All notable project changes are documented here. The project follows the structu
 ### Added
 
 - Project charter, product requirements, architecture, roadmap, contribution guide, and domain documentation.
-- Historical record of the original product vision.
-- Planned printer flight recorder, telemetry adapters, source correlation, and incident reporting feature.
 - Safe embedded G-code discovery for sliced 3MF archives, including explicit multi-plate selection.
 - Archive provenance in recovery diffs, reports, and CLI output.
-- Long-term print-farm monitoring and policy-gated automatic recovery requirements.
 
 ### Changed
 
@@ -19,6 +16,7 @@ All notable project changes are documented here. The project follows the structu
 - Enforced immutable input and distinct recovery artifact paths.
 - Refactored the MVP into a pragmatic hexagonal architecture with immutable domain models, typed errors, protocol-based ports, focused adapters, a `RecoverPrint` use case, and an explicit composition root.
 - Added Ruff and strict mypy as required development checks.
+- Narrowed the product scope to deterministic failed-print recovery; monitoring, fleet management, printer control, and general-purpose G-code tooling are explicit non-goals.
 
 ## 0.1.0
 

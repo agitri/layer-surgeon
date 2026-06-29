@@ -5,7 +5,7 @@
 Layer Surgeon uses a pragmatic hexagonal architecture. The objective is to isolate safety-sensitive recovery rules from file formats, presentation formats, storage, and user interfaces without creating a class hierarchy for every function.
 
 ```text
-CLI / future API / fleet workers
+CLI / recovery library consumers
               |
               v
        Application use cases
@@ -138,10 +138,6 @@ Implement a focused renderer protocol and wire it through a use case or a new ar
 ### Add printer-specific policy
 
 Introduce a small policy port consumed by `RecoveryPlanner`. Printer policy belongs in the domain-facing planning boundary; printer communication belongs in an adapter.
-
-### Add monitoring or fleet control
-
-Monitoring is a separate application use case with telemetry and printer-control ports. It may invoke recovery planning after preserving incident evidence, but recovery planning must not acquire network or printer-control responsibilities.
 
 ## Testing and enforcement
 

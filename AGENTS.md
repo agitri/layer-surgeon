@@ -2,7 +2,7 @@
 
 ## Mission
 
-Build the most trusted transparent G-code recovery engine, then grow it into a compiler and debugger for G-code.
+Build the most trusted transparent G-code recovery engine.
 
 ## Required context
 
@@ -11,7 +11,8 @@ Before changing code, read:
 1. `PRD.md` for current product requirements.
 2. `ARCHITECTURE.md` for existing and target boundaries.
 3. `ROADMAP.md` for implementation status and priorities.
-4. The relevant domain document linked from `docs/README.md`.
+4. `PROJECT_STATUS.md` for the current handoff and next implementation step.
+5. The relevant domain document linked from `docs/README.md`.
 
 ## Rules
 

@@ -1,6 +1,6 @@
 # Layer Surgeon
 
-Layer Surgeon is an open-source, auditable recovery tool for failed 3D prints—and the foundation of a compiler and debugger for G-code.
+Layer Surgeon is an open-source, auditable recovery engine for failed 3D prints.
 
 It takes plain G-code or G-code discovered inside a sliced 3MF package, starts from a chosen layer, adds an explicit recovery preamble, and produces:
 
@@ -158,16 +158,13 @@ Recovery G-code can crash into an existing part if the printer has lost position
 
 ## Project direction
 
-The long-term goal is the Git of G-code: deterministic tools to monitor, recover, diff, diagnose, explain, visualize, patch, and eventually optimize printer instruction streams.
+The goal is narrow: determine whether a failed print is recoverable, reconstruct the required machine state, and produce deterministic recovery G-code with a complete diff and risk report. Monitoring, farm management, printer control, visualization, optimization, and general-purpose G-code editing are out of scope.
 
 - [Product requirements](PRD.md)
 - [Architecture](ARCHITECTURE.md)
 - [Roadmap](ROADMAP.md)
 - [Contributing](CONTRIBUTING.md)
 - [Documentation index](docs/README.md)
-- [Long-term master plan](docs/masterplan.md)
-
-Roadmap commands are not implemented until identified as complete in `ROADMAP.md` and documented here.
 
 ## License
 
